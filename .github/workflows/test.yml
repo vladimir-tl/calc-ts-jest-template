@@ -1,6 +1,5 @@
 name: PR Test Reporter
 
-# Trigger the workflow on push to main branch and pull requests targeting main
 on:
   push:
     branches:
@@ -8,6 +7,10 @@ on:
   pull_request:
     branches:
       - main
+
+permissions:
+  pull-requests: write
+  issues: write  # Needed to post comments on PRs
 
 jobs:
   test:
@@ -31,22 +34,19 @@ jobs:
           npm test -- --json --outputFile=test-results.json
 
       - name: Report test results
-        if: always()  # This ensures the step runs even if tests fail
+        if: always()
         uses: actions/github-script@v6
         with:
           script: |
             const fs = require('fs');
             const testResults = JSON.parse(fs.readFileSync('test-results.json', 'utf8'));
 
-            // Summarize test results
             const passed = testResults.numPassedTests;
             const failed = testResults.numFailedTests;
             const total = testResults.numTotalTests;
 
-            // Create a comment on the PR with the test results
             const prNumber = context.payload.pull_request?.number;
 
-            // Only post a comment if this is a pull request
             if (prNumber) {
               const body = `
                 **Test Results:**
