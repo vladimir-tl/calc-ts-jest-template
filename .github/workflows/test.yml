@@ -1,6 +1,6 @@
-name: Run Tests
+name: PR Test Reporter
 
-# Trigger the workflow on every push or pull request to the main branch
+# Trigger the workflow on push to main branch and pull requests targeting main
 on:
   push:
     branches:
@@ -14,20 +14,51 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the repository
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Set up Node.js environment
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
 
-      # Install dependencies
       - name: Install dependencies
         run: npm install
 
-      # Run tests
-      - name: Run tests
-        run: npm test
+      - name: Run Jest tests
+        id: run-tests
+        run: |
+          npm test -- --json --outputFile=test-results.json
+
+      - name: Report test results
+        if: always()  # This ensures the step runs even if tests fail
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const testResults = JSON.parse(fs.readFileSync('test-results.json', 'utf8'));
+
+            // Summarize test results
+            const passed = testResults.numPassedTests;
+            const failed = testResults.numFailedTests;
+            const total = testResults.numTotalTests;
+
+            // Create a comment on the PR with the test results
+            const prNumber = context.payload.pull_request?.number;
+
+            // Only post a comment if this is a pull request
+            if (prNumber) {
+              const body = `
+                **Test Results:**
+                - Passed: ${passed}
+                - Failed: ${failed}
+                - Total: ${total}
+              `;
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: body
+              });
+            }
