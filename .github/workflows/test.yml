@@ -45,13 +45,16 @@ jobs:
             const failed = testResults.numFailedTests;
             const total = testResults.numTotalTests;
 
+            // Get current date and time
+            const currentDate = new Date().toLocaleString('en-US', { timeZone: 'UTC', timeZoneName: 'short' });
+
             const prNumber = context.payload.pull_request?.number;
 
             if (prNumber) {
               const body = `
-                **Test Results:**
-                - Passed: ${passed}
-                - Failed: ${failed}
+                **Test Results (Run at ${currentDate}):**
+                - Passed: ${passed} ✅
+                - Failed: ${failed} ❌
                 - Total: ${total}
               `;
 
