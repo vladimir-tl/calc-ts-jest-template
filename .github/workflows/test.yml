@@ -52,7 +52,7 @@ jobs:
 
             if (prNumber) {
               const body = `
-                **Test Results (Run at ${currentDate}):**
+                Test Results (Run at ${currentDate}):
                 - Passed: ${passed} ✅
                 - Failed: ${failed} ❌
                 - Total: ${total}
