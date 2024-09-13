@@ -1,12 +1,12 @@
 name: PR Test Reporter
 
 on:
+  pull_request:
+    branches:
+      - '**'  # Trigger on PRs to any branch
   push:
     branches:
       - '**'  # Trigger on any branch push
-  pull_request:
-    branches:
-      - '**'  # Trigger on pull requests to any branch
 
 permissions:
   pull-requests: write
@@ -42,8 +42,8 @@ jobs:
             exit 1
           fi
 
-      - name: Report test results (Push Event)
-        if: ${{ github.event_name == 'push' }} # Runs only for push events
+      - name: Report test results (Only Run Once)
+        if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action == 'opened')
         run: |
           const fs = require('fs');
           try {
@@ -55,7 +55,7 @@ jobs:
 
             const currentDate = new Date().toLocaleString('en-US', { timeZone: 'UTC', timeZoneName: 'short' });
 
-            console.log(`::notice file=README.md::Test Results (Push Event) (Run at ${currentDate}):`);
+            console.log(`::notice file=README.md::Test Results (Run at ${currentDate}):`);
             console.log(`- Passed: ${passed} ✅`);
             console.log(`- Failed: ${failed} ❌`);
             console.log(`- Total: ${total}`);
@@ -64,8 +64,8 @@ jobs:
             process.exit(1); // Exit with error status
           }
 
-      - name: Report test results (PR Event)
-        if: ${{ github.event_name == 'pull_request' }} # Runs only for PR events
+      - name: Report test results in PR
+        if: github.event_name == 'pull_request' && github.event.action == 'opened'
         uses: actions/github-script@v6
         with:
           script: |
