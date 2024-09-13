@@ -3,10 +3,10 @@ name: PR Test Reporter
 on:
   push:
     branches:
-      - '**'
+      - '**'  # Trigger on any branch push
   pull_request:
     branches:
-      - '**'
+      - '**'  # Trigger on pull requests to any branch
 
 permissions:
   pull-requests: write
@@ -15,7 +15,6 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }} # Runs for both push and PR events
 
     steps:
       - name: Checkout repository
@@ -36,35 +35,20 @@ jobs:
 
       - name: Report test results (Push Event)
         if: ${{ github.event_name == 'push' }} # Runs only for push events
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const fs = require('fs');
-            const testResults = JSON.parse(fs.readFileSync('test-results.json', 'utf8'));
+        run: |
+          const fs = require('fs');
+          const testResults = JSON.parse(fs.readFileSync('test-results.json', 'utf8'));
 
-            const passed = testResults.numPassedTests;
-            const failed = testResults.numFailedTests;
-            const total = testResults.numTotalTests;
+          const passed = testResults.numPassedTests;
+          const failed = testResults.numFailedTests;
+          const total = testResults.numTotalTests;
 
-            const currentDate = new Date().toLocaleString('en-US', { timeZone: 'UTC', timeZoneName: 'short' });
+          const currentDate = new Date().toLocaleString('en-US', { timeZone: 'UTC', timeZoneName: 'short' });
 
-            const prNumber = context.payload.pull_request?.number;
-
-            if (prNumber) {
-              const body = `
-                **Test Results (Run at ${currentDate}):**
-                - Passed: ${passed} ✅
-                - Failed: ${failed} ❌
-                - Total: ${total}
-              `;
-
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                body: body
-              });
-            }
+          console.log(`Test Results (Push Event) (Run at ${currentDate}):`);
+          console.log(`- Passed: ${passed} ✅`);
+          console.log(`- Failed: ${failed} ❌`);
+          console.log(`- Total: ${total}`);
 
       - name: Report test results (PR Event)
         if: ${{ github.event_name == 'pull_request' }} # Runs only for PR events
