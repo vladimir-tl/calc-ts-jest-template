@@ -33,22 +33,36 @@ jobs:
         run: |
           npm test -- --json --outputFile=test-results.json
 
+      - name: Check if test-results.json exists
+        run: |
+          if [ -f test-results.json ]; then
+            echo "Test results file exists."
+          else
+            echo "Test results file does not exist."
+            exit 1
+          fi
+
       - name: Report test results (Push Event)
         if: ${{ github.event_name == 'push' }} # Runs only for push events
         run: |
           const fs = require('fs');
-          const testResults = JSON.parse(fs.readFileSync('test-results.json', 'utf8'));
+          try {
+            const testResults = JSON.parse(fs.readFileSync('test-results.json', 'utf8'));
 
-          const passed = testResults.numPassedTests;
-          const failed = testResults.numFailedTests;
-          const total = testResults.numTotalTests;
+            const passed = testResults.numPassedTests;
+            const failed = testResults.numFailedTests;
+            const total = testResults.numTotalTests;
 
-          const currentDate = new Date().toLocaleString('en-US', { timeZone: 'UTC', timeZoneName: 'short' });
+            const currentDate = new Date().toLocaleString('en-US', { timeZone: 'UTC', timeZoneName: 'short' });
 
-          console.log(`Test Results (Push Event) (Run at ${currentDate}):`);
-          console.log(`- Passed: ${passed} ✅`);
-          console.log(`- Failed: ${failed} ❌`);
-          console.log(`- Total: ${total}`);
+            console.log(`::notice file=README.md::Test Results (Push Event) (Run at ${currentDate}):`);
+            console.log(`- Passed: ${passed} ✅`);
+            console.log(`- Failed: ${failed} ❌`);
+            console.log(`- Total: ${total}`);
+          } catch (error) {
+            console.error('Error reading or parsing test-results.json:', error);
+            process.exit(1); // Exit with error status
+          }
 
       - name: Report test results (PR Event)
         if: ${{ github.event_name == 'pull_request' }} # Runs only for PR events
@@ -74,10 +88,15 @@ jobs:
                 - Total: ${total}
               `;
 
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                body: body
-              });
+              try {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  body: body
+                });
+              } catch (error) {
+                console.error('Error creating comment on PR:', error);
+                process.exit(1); // Exit with error status
+              }
             }
