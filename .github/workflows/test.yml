@@ -3,10 +3,10 @@ name: PR Test Reporter
 on:
   push:
     branches:
-      - main
+      - '**'
   pull_request:
     branches:
-      - main
+      - '**'
 
 permissions:
   pull-requests: write
