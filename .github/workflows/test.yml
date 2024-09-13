@@ -1,13 +1,12 @@
 name: PR Test Reporter
 
 on:
-  pull_request:
-    types: [opened, reopened, synchronize] # Trigger on relevant PR events
-    branches:
-      - '**'  # Trigger on PRs to any branch
   push:
     branches:
-      - '**'  # Trigger on any branch push
+      - '**'
+  pull_request:
+    branches:
+      - '**'
 
 permissions:
   pull-requests: write
@@ -34,39 +33,8 @@ jobs:
         run: |
           npm test -- --json --outputFile=test-results.json
 
-      - name: Check if test-results.json exists
-        run: |
-          if [ -f test-results.json ]; then
-            echo "Test results file exists."
-          else
-            echo "Test results file does not exist."
-            exit 1
-          fi
-
-      - name: Report test results (Only Run Once)
-        if: github.event_name == 'push' || github.event_name == 'pull_request'
-        run: |
-          const fs = require('fs');
-          try {
-            const testResults = JSON.parse(fs.readFileSync('test-results.json', 'utf8'));
-
-            const passed = testResults.numPassedTests;
-            const failed = testResults.numFailedTests;
-            const total = testResults.numTotalTests;
-
-            const currentDate = new Date().toLocaleString('en-US', { timeZone: 'UTC', timeZoneName: 'short' });
-
-            console.log(`::notice file=README.md::Test Results (Run at ${currentDate}):`);
-            console.log(`- Passed: ${passed} ✅`);
-            console.log(`- Failed: ${failed} ❌`);
-            console.log(`- Total: ${total}`);
-          } catch (error) {
-            console.error('Error reading or parsing test-results.json:', error);
-            process.exit(1); // Exit with error status
-          }
-
-      - name: Report test results in PR
-        if: github.event_name == 'pull_request'
+      - name: Report test results
+        if: always()
         uses: actions/github-script@v6
         with:
           script: |
@@ -77,27 +45,23 @@ jobs:
             const failed = testResults.numFailedTests;
             const total = testResults.numTotalTests;
 
+            // Get current date and time
             const currentDate = new Date().toLocaleString('en-US', { timeZone: 'UTC', timeZoneName: 'short' });
 
             const prNumber = context.payload.pull_request?.number;
 
             if (prNumber) {
               const body = `
-                **Test Results** (Run at ${currentDate}):
+                Test Results (Run at ${currentDate}):
                 - Passed: ${passed} ✅
                 - Failed: ${failed} ❌
                 - Total: ${total}
               `;
 
-              try {
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: prNumber,
-                  body: body
-                });
-              } catch (error) {
-                console.error('Error creating comment on PR:', error);
-                process.exit(1); // Exit with error status
-              }
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: body
+              });
             }
