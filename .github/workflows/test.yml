@@ -2,6 +2,7 @@ name: PR Test Reporter
 
 on:
   pull_request:
+    types: [opened, reopened, synchronize] # Trigger on relevant PR events
     branches:
       - '**'  # Trigger on PRs to any branch
   push:
@@ -43,7 +44,7 @@ jobs:
           fi
 
       - name: Report test results (Only Run Once)
-        if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action == 'opened')
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
         run: |
           const fs = require('fs');
           try {
@@ -65,7 +66,7 @@ jobs:
           }
 
       - name: Report test results in PR
-        if: github.event_name == 'pull_request' && github.event.action == 'opened'
+        if: github.event_name == 'pull_request'
         uses: actions/github-script@v6
         with:
           script: |
@@ -82,7 +83,7 @@ jobs:
 
             if (prNumber) {
               const body = `
-                Test Results (Run at ${currentDate}):
+                **Test Results** (Run at ${currentDate}):
                 - Passed: ${passed} ✅
                 - Failed: ${failed} ❌
                 - Total: ${total}
