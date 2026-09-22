@@ -2,14 +2,14 @@ export class Account {
   balance: number
   status: string
 
-  constructor(initialBalance : number) {
+  constructor(initialBalance: number) {
     this.balance = initialBalance
+
     if (initialBalance < 0) {
       this.status = 'PENDING'
     } else {
       this.status = 'ACTIVE'
     }
-
   }
 
   deposit(amount: number): void {
@@ -21,5 +21,4 @@ export class Account {
   }
 
   // implement withdrawal
-
 }
