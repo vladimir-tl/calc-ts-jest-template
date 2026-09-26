@@ -1,16 +1,17 @@
 export class Card {
-  number: string
+  cardNumber: string
   dailyLimit: number
   spentToday: number
   isBlocked: boolean
 
   constructor(number: string, dailyLimit: number) {
-    this.number = number
+    this.cardNumber = number
     this.dailyLimit = dailyLimit
     this.spentToday = 0
     this.isBlocked = false
   }
 
+  // methods --> ACTIONS
   block(): void {
     this.isBlocked = true
   }
@@ -19,8 +20,8 @@ export class Card {
     this.isBlocked = false
   }
 
-  // hides the whole number: returns ****
-  maskNumber(): string {
+  // TODO: fix the implementation
+  maskCardNumber(): string {
     return '****'
   }
 
